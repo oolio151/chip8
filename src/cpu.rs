@@ -72,6 +72,32 @@ impl Chip8 {
                 self.pc = (opcode & 0x0FFF) as i16;
             } //move the pointer to YZW
 
+            0x2000 => {
+                //TO BE IMPLEMENTED
+            } //calls the subroutine at YZW
+
+            0x3000 => {
+                let x: u16= opcode & 0x0F00 >> 8;
+                let vx: u8= self.registers[x as usize];
+
+                let xx: u16 = opcode & 0x00FF;
+
+                if vx == xx as u8 {
+                    self.pc += 2;
+                }
+            }
+
+            0x4000 => {
+                let x: u16= opcode & 0x0F00 >> 8;
+                let vx: u8= self.registers[x as usize];
+
+                let xx: u16 = opcode & 0x00FF;
+
+                if vx != xx as u8 {
+                    self.pc += 2;
+                }
+            }
+
             _ => {
                 panic!("unknown opcode: {:#X}", opcode);
             }
