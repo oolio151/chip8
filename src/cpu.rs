@@ -77,7 +77,7 @@ impl Chip8 {
             } //calls the subroutine at YZW
 
             0x3000 => {
-                let x: u16= opcode & 0x0F00 >> 8;
+                let x: u16= (opcode & 0x0F00) >> 8;
                 let vx: u8= self.registers[x as usize];
 
                 let xx: u16 = opcode & 0x00FF;
@@ -85,10 +85,10 @@ impl Chip8 {
                 if vx == xx as u8 {
                     self.pc += 2;
                 }
-            }
+            } //skips the next instruction if Vx = ZW
 
             0x4000 => {
-                let x: u16= opcode & 0x0F00 >> 8;
+                let x: u16= (opcode & 0x0F00) >> 8;
                 let vx: u8= self.registers[x as usize];
 
                 let xx: u16 = opcode & 0x00FF;
@@ -96,6 +96,101 @@ impl Chip8 {
                 if vx != xx as u8 {
                     self.pc += 2;
                 }
+            } //skips the next instruction if Vx != ZW
+
+            0x5000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let y: u16= (opcode & 0x00F0) >> 4;
+
+                let vx: u8 = self.registers[x as usize];
+                let vy: u8 = self.registers[y as usize];
+
+                if vx != vy {
+                    self.pc += 2;
+                }
+            } //skips the next instruction if Vx = Vy
+
+            0x6000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                self.registers[x as usize] = (opcode & 0x00FF) as u8;
+
+            } //sets the value of Vx
+
+            0x7000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                self.registers[x as usize] = self.registers[x as usize].wrapping_add((opcode & 0x00FF) as u8);
+            } //adds ZW to Vx
+
+            0x8000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let y: u16= (opcode & 0x00F0) >> 4;
+
+                match opcode & 0x000F {
+
+                    0x0000 => {
+                        self.registers[x as usize] = self.registers[y as usize];
+                    } //sets Vx to Vy
+
+                    0x0001 => {
+                        self.registers[x as usize] = self.registers[x as usize] | self.registers[y as usize];
+                    } //sets Vx to Vx OR Vy
+
+                    0x0002 => {
+                        self.registers[x as usize] = self.registers[x as usize] & self.registers[y as usize];
+                    }
+
+                    0x0003 => {
+                        self.registers[x as usize] = self.registers[x as usize] ^ self.registers[y as usize];
+                    }
+
+                    0x0004 => {
+                        let result: u16 = self.registers[x as usize] as u16 + self.registers[y as usize] as u16;
+                        self.registers[0xF] = if result > 255 { 1 } else { 0 };
+                        self.registers[x as usize] = result as u8;
+                    }
+
+                    0x0005 => {
+                        let result: u16 = self.registers[x as usize] as u16 - self.registers[y as usize] as u16;
+                        self.registers[0xF] = if self.registers[x as usize] > self.registers[y as usize] { 1 } else { 0 };
+                        self.registers[x as usize] = result as u8;
+                    }
+                    0x0006 => {
+                        self.registers[0xF] = self.registers[x as usize] & 0x1;
+                        self.registers[x as usize] >>= 1;
+                    }
+
+                    0x0007 => {
+                        let result: u16 = self.registers[y as usize] as u16 - self.registers[x as usize] as u16;
+                        self.registers[0xF] = if self.registers[y as usize] > self.registers[x as usize] { 1 } else { 0 };
+                        self.registers[x as usize] = result as u8;
+                    }
+
+                    0x000E => {
+                        self.registers[0xF] = if self.registers[x as usize] & 0x80 == 0x80 {1} else {0};
+                        self.registers[x as usize] <<= 1;
+                    }
+
+                    _ => panic!("unknown opcode: {:#X}", opcode)
+                }
+            }
+
+            0x9000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let y: u16= (opcode & 0x00F0) >> 4;
+
+                if self.registers[x as usize] != self.registers[y as usize] {
+                    self.pc += 2;
+                }
+            }
+
+            0xA000 => {
+                self.I = (opcode & 0x0FFF) as i16;
+            }
+
+            0xB000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+
+                self.pc = (opcode & 0x0FFF) as i16 + self.registers[x as usize] as i16;
             }
 
             _ => {
