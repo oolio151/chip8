@@ -9,7 +9,6 @@ fn main() {
     setupGfx();
     setupInput();
 
-    c8.init();
     c8.loadGame("pong");
 
     while true {

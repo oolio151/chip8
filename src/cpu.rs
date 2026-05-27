@@ -1,3 +1,5 @@
+use rand::Rng;
+
 pub struct Chip8 {
     memory: [u8; 4096],
     //mwemory map
@@ -192,6 +194,45 @@ impl Chip8 {
 
                 self.pc = (opcode & 0x0FFF) as i16 + self.registers[x as usize] as i16;
             }
+
+            0xC000 => {
+                let rand: u8 = rand::thread_rng().gen_range(0..=255);
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let xx: u16 = opcode & 0x00FF;
+
+                self.registers[x as usize] = rand & xx as u8;
+
+            }
+
+            0xD000 => {
+                let height: u8 = (opcode & 0x000F) as u8;
+
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let y: u16= (opcode & 0x00F0) >> 4;
+                let n: u8 = (opcode & 0x000F) as u8;
+
+                let vx: u8 = self.registers[x as usize];
+                let vy: u8 = self.registers[y as usize];
+                self.registers[0xF] = 0;
+
+                for i in 0..n {
+                    let sprite: u8 = self.memory[self.I as usize + i as usize];
+                    for j in 0..8 {
+                        let pos: usize = ((vy as u16 + i as u16) % 32 * 64 + (vx as u16+ j as u16) % 64) as usize;
+
+                        if sprite & (0x80 >> j) != 0 {
+                            if self.graphics[pos] == 1 {
+                                self.registers[0xF] = 1;
+                            }
+                            self.graphics[pos] ^= 1;
+                        }
+                        
+                    }
+                    
+                }
+
+
+            } //draws stuff, I is a pointer to the start of a sprite
 
             _ => {
                 panic!("unknown opcode: {:#X}", opcode);
