@@ -17,7 +17,7 @@ pub struct Chip8 {
     stack: [i16; 16],
     sp: i16,
 
-    key: [i16; 16],
+    key: [bool; 16],
 
     draw_flag: bool
 } 
@@ -35,7 +35,7 @@ impl Chip8 {
             sound_timer: 0,
             stack: [0i16; 16],
             sp: 0,
-            key: [0i16; 16],
+            key: [false; 16],
             draw_flag: false,
         }
     }
@@ -75,7 +75,9 @@ impl Chip8 {
             } //move the pointer to YZW
 
             0x2000 => {
-                //TO BE IMPLEMENTED
+                self.stack[self.sp as usize] = self.pc;
+                self.sp +=1 ;
+                self.pc = (opcode & 0x0FFF) as i16;
             } //calls the subroutine at YZW
 
             0x3000 => {
@@ -205,8 +207,6 @@ impl Chip8 {
             }
 
             0xD000 => {
-                let height: u8 = (opcode & 0x000F) as u8;
-
                 let x: u16= (opcode & 0x0F00) >> 8;
                 let y: u16= (opcode & 0x00F0) >> 4;
                 let n: u8 = (opcode & 0x000F) as u8;
@@ -234,6 +234,37 @@ impl Chip8 {
 
             } //draws stuff, I is a pointer to the start of a sprite
 
+            0xE000 => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let vx = self.registers[x as usize];
+
+                
+                match opcode & 0x00FF {
+                    0x009E => {
+                        
+                        if self.key[vx as usize] {
+                            self.pc += 2;
+                        }
+                    }
+
+                    0x00A1 => {
+                        if !self.key[vx as usize] {
+                            self.pc += 2;
+                        }
+                    }
+
+                    _ => panic!("unknown opcode: {:#X}", opcode)
+                }
+            }
+
+            0x000F => {
+                match opcode & 0x00FF {
+                    
+
+
+                    _ => panic!("unknown opcode: {:#X}", opcode)
+                }
+            }
             _ => {
                 panic!("unknown opcode: {:#X}", opcode);
             }
