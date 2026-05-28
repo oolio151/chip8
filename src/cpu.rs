@@ -258,9 +258,50 @@ impl Chip8 {
             }
 
             0x000F => {
+                let x: u16= (opcode & 0x0F00) >> 8;
+                let vx = self.registers[x as usize];
+
                 match opcode & 0x00FF {
                     
+                    0x0007 => {
+                        self.registers[x as usize] = self.delay_timer;
+                    }
 
+                    0x000A => {
+                        //read the wikipedia, basically stops instruction until the next key event, timers keep counting down
+                    }
+
+                    0x0015 => {
+                        self.delay_timer = vx;
+                    }
+
+                    0x0018 => {
+                        self.sound_timer = vx;
+                    }
+
+                    0x001E => {
+                        self.I += vx as i16;
+                    }
+
+                    0x0029 => {
+                        //sets I to the location of the sprite for the character in vx. characters are represented by a 4x5 font
+                    }
+
+                    0x0033 => {
+                        //read the wikipedia page
+                    }
+
+                    0x0055 => {
+                        for i in 0..x+1 {
+                            self.memory[self.I as usize + i as usize] = self.registers[i as usize]
+                        }
+                    } //stores from v0 to vx starting at address I, leaving I unchanged
+
+                    0x0065 => {
+                        for i in 0..x+1 {
+                            self.registers[i as usize]= self.memory[self.I as usize + i as usize];
+                        }
+                    }
 
                     _ => panic!("unknown opcode: {:#X}", opcode)
                 }
