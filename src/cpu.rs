@@ -1,7 +1,7 @@
 use rand::Rng;
 
 pub struct Chip8 {
-    memory: [u8; 4096],
+    pub memory: [u8; 4096],
     //mwemory map
     //0x000 to 0x1FF is the interpreter
     //0x050 to 0x0A0 used for built in 4x5 pixel font set
@@ -10,16 +10,16 @@ pub struct Chip8 {
     registers: [u8; 16],
     I: i16,
     pc: i16,
-    graphics: [u8; 2048],
+    pub graphics: [u8; 2048],
     delay_timer: u8,
     sound_timer: u8,
 
     stack: [i16; 16],
     sp: i16,
 
-    key: [bool; 16],
+    pub key: [bool; 16],
 
-    draw_flag: bool
+    pub draw_flag: bool
 } 
 
 impl Chip8 {
@@ -61,12 +61,14 @@ impl Chip8 {
             0x0000 => match opcode {
                 0x00E0 => {
                     self.graphics = [0u8; 2048];
+                    self.draw_flag = true;
                 } //clear the screen
                 0x00EE => {
-
+                    self.sp -= 1;
+                    self.pc = self.stack[self.sp as usize];
                 } //return from a subroutine
                 _ => {
-
+                    panic!("opcode 0x0NNN not implemented");
                 } // some bs check wikipedia
             }
 
@@ -109,7 +111,7 @@ impl Chip8 {
                 let vx: u8 = self.registers[x as usize];
                 let vy: u8 = self.registers[y as usize];
 
-                if vx != vy {
+                if vx == vy {
                     self.pc += 2;
                 }
             } //skips the next instruction if Vx = Vy
@@ -192,9 +194,7 @@ impl Chip8 {
             }
 
             0xB000 => {
-                let x: u16= (opcode & 0x0F00) >> 8;
-
-                self.pc = (opcode & 0x0FFF) as i16 + self.registers[x as usize] as i16;
+                self.pc = (opcode & 0x0FFF) as i16 + self.registers[0] as i16;
             }
 
             0xC000 => {
@@ -257,7 +257,7 @@ impl Chip8 {
                 }
             }
 
-            0x000F => {
+            0xF000 => {
                 let x: u16= (opcode & 0x0F00) >> 8;
                 let vx = self.registers[x as usize];
 
@@ -268,7 +268,20 @@ impl Chip8 {
                     }
 
                     0x000A => {
-                        //read the wikipedia, basically stops instruction until the next key event, timers keep counting down
+                        let mut keyf : u8 = 16;
+                        for i in 0..16{
+                            if self.key[i] {
+                                keyf = i as u8;
+                                break;
+                            }
+                        }
+
+                        if keyf != 16 {
+                            self.registers[x as usize] = keyf;
+                            
+                        } else {
+                            self.pc -=2;
+                        }
                     }
 
                     0x0015 => {
@@ -284,11 +297,13 @@ impl Chip8 {
                     }
 
                     0x0029 => {
-                        //sets I to the location of the sprite for the character in vx. characters are represented by a 4x5 font
+                        self.I = 0x050 + vx as i16 * 5;
                     }
 
                     0x0033 => {
-                        //read the wikipedia page
+                        self.memory[self.I as usize] = vx / 100;
+                        self.memory[self.I as usize + 1] = (vx / 10) % 10;
+                        self.memory[self.I as usize + 2] = vx % 10;
                     }
 
                     0x0055 => {
@@ -310,5 +325,7 @@ impl Chip8 {
                 panic!("unknown opcode: {:#X}", opcode);
             }
         }
+
+        //self.pc +=2;
     }
 }
