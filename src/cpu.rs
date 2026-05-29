@@ -64,8 +64,12 @@ impl Chip8 {
                     self.draw_flag = true;
                 } //clear the screen
                 0x00EE => {
-                    self.sp -= 1;
-                    self.pc = self.stack[self.sp as usize];
+                    if self.sp > 0 {
+                        self.sp -= 1;
+                        self.pc = self.stack[self.sp as usize];
+                    } else {
+                        panic!("stack underflow");
+                    }
                 } //return from a subroutine
                 _ => {
                     panic!("opcode 0x0NNN not implemented");
@@ -230,7 +234,7 @@ impl Chip8 {
                     }
                     
                 }
-
+                self.draw_flag = true;
 
             } //draws stuff, I is a pointer to the start of a sprite
 
@@ -340,17 +344,19 @@ impl Chip8 {
 
     pub fn load_game(&mut self, game: &str) {
         let rom = std::fs::read(Chip8::game_path(game)).expect("failed to read ROM");
+
+        for (i, byte) in rom.iter().enumerate() {
+        self.memory[0x200 + i] = *byte;
+}
     }
 
-    fn game_path(game: &str) -> &str{
-        match game{
-            "space invaders" => {
-                return "/roms/spaceinvaders.ch8";
-            }
+    fn game_path(game: &str) -> String{
+        return format!("roms/{}.ch8", game);
+    }
 
-            _ => {
-                return "fuck you";
-            }
+    pub fn load_fonts(&mut self, fontset: [u8; 80]) {
+        for i in 0x050..0x0A0{
+            self.memory[i] = fontset[i - 0x050];
         }
     }
 } 
