@@ -328,4 +328,29 @@ impl Chip8 {
 
         //self.pc +=2;
     }
-}
+
+    pub fn timers(&mut self) {
+        if self.delay_timer > 0 { self.delay_timer -= 1; }
+        if self.sound_timer > 0 { self.sound_timer -= 1; }
+    }
+
+    pub fn s_timer(&mut self) -> bool {
+        return self.sound_timer > 0;
+    }
+
+    pub fn load_game(&mut self, game: &str) {
+        let rom = std::fs::read(Chip8::game_path(game)).expect("failed to read ROM");
+    }
+
+    fn game_path(game: &str) -> &str{
+        match game{
+            "space invaders" => {
+                return "/roms/spaceinvaders.ch8";
+            }
+
+            _ => {
+                return "fuck you";
+            }
+        }
+    }
+} 

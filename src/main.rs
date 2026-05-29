@@ -1,24 +1,35 @@
 mod cpu;
 mod display;
 use cpu::Chip8;
+use std::time::Duration;
+use std::thread;
 
 fn main() {
 
     let mut c8: Chip8 = Chip8::new();
     println!("Hello, world!");
 
-    setup_gfx(c8);
-    setupInput();
+    setup_gfx(&mut c8);
+    setup_input();
 
-    c8.loadGame("pong");
+    c8.load_game("pong");
 
     loop {
         c8.cycle();
+
+        if c8.s_timer() {
+            //play sound
+        }
+
         if c8.draw_flag {
             draw(&mut c8);            
         }
         
-        c8.setKeys();
+        c8.set_keys();
+
+        c8.timers();
+
+        thread::sleep(Duration::from_secs_f64(1.0 / 60.0)); //forces 60 fps
     }
 
 }
